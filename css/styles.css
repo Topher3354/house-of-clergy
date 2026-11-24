@@ -486,7 +486,8 @@ table.data a:hover { text-decoration: underline; }
   margin-bottom: 1rem;
 }
 
-.filters .field { flex: 1 1 10rem; }
+.filters .field { flex: 1 1 9rem; }
+.filters .field-date { flex: 0 1 11rem; max-width: 13rem; }
 
 /* Record */
 
@@ -726,4 +727,16 @@ th.cell-nowrap {
 
 .filters .field-actions .row-actions {
   min-width: 0;
+}
+
+.plain-list,
+.agenda-list {
+  margin: 0.4rem 0 0.75rem;
+  padding-left: 1.2rem;
+}
+.plain-list { list-style: disc; }
+.agenda-list { list-style: decimal; }
+.plain-list li,
+.agenda-list li {
+  margin: 0.2rem 0;
 }
