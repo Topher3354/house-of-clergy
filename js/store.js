@@ -58,6 +58,9 @@
       if (!this.data.ui.verifierProvince) this.data.ui.verifierProvince = "Lagos Province";
       if (!this.data.ui.repId) this.data.ui.repId = "r30";
       if (!this.data.ui.confirmStep) this.data.ui.confirmStep = 1;
+      if (!this.data.designations) this.data.designations = clone(global.HOC_SEED.designations || []);
+      if (!this.data.meetings) this.data.meetings = clone(global.HOC_SEED.meetings || []);
+      if (!this.data.reports) this.data.reports = clone(global.HOC_SEED.reports || []);
     },
 
     save: function () {
@@ -88,6 +91,10 @@
 
     committees: function () {
       return this.data.committees.slice();
+    },
+
+    designations: function () {
+      return (this.data.designations || global.HOC_SEED.designations || []).slice();
     },
 
     dioceses: function (province) {
@@ -399,6 +406,78 @@
         pendingAcknowledgements: pendingAck,
         provinceStatus: provinces,
       };
+    },
+
+    meetings: function () {
+      return (this.data.meetings || []).slice().sort(function (a, b) {
+        if (a.date === b.date) return (a.time || "") < (b.time || "") ? 1 : -1;
+        return a.date < b.date ? 1 : -1;
+      });
+    },
+
+    meeting: function (id) {
+      return (this.data.meetings || []).find(function (m) {
+        return m.id === id;
+      }) || null;
+    },
+
+    upcomingMeetings: function () {
+      var today = todayEatDate();
+      return this.meetings().filter(function (m) {
+        return m.date >= today;
+      }).sort(function (a, b) {
+        if (a.date === b.date) return (a.time || "") < (b.time || "") ? -1 : 1;
+        return a.date < b.date ? -1 : 1;
+      });
+    },
+
+    postMeeting: function (fields) {
+      var meeting = {
+        id: "m" + Date.now().toString(36),
+        title: fields.title,
+        date: fields.date,
+        time: fields.time || "",
+        venue: fields.venue || "",
+        audience: fields.audience || "All provinces",
+        notice: fields.notice || "",
+        agenda: fields.agenda || "",
+        postedAt: nowIso(),
+        author: "Secretary's office",
+      };
+      this.data.meetings = this.data.meetings || [];
+      this.data.meetings.push(meeting);
+      this.save();
+      return meeting;
+    },
+
+    reports: function () {
+      return (this.data.reports || []).slice().sort(function (a, b) {
+        return a.uploadedAt < b.uploadedAt ? 1 : -1;
+      });
+    },
+
+    report: function (id) {
+      return (this.data.reports || []).find(function (r) {
+        return r.id === id;
+      }) || null;
+    },
+
+    uploadReport: function (fields) {
+      var report = {
+        id: "rp" + Date.now().toString(36),
+        title: fields.title,
+        committee: fields.committee,
+        period: fields.period || "",
+        fileName: fields.fileName,
+        notes: fields.notes || "",
+        uploadedAt: nowIso(),
+        uploadedBy: fields.uploadedBy || "Secretary's office",
+        authorPersonId: fields.authorPersonId || "",
+      };
+      this.data.reports = this.data.reports || [];
+      this.data.reports.push(report);
+      this.save();
+      return report;
     },
 
     exportCsv: function () {

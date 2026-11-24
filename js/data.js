@@ -6,7 +6,7 @@
    Phone numbers use the obviously fake pattern +234 800 000 00xx.
 */
 window.HOC_SEED = {
-  version: 1,
+  version: 2,
   generatedAt: "2026-11-24T13:00:00+03:00",
   provinces: [
   "Aba Province",
@@ -260,9 +260,9 @@ window.HOC_SEED = {
   },
   {
     "id": "r04",
-    "title": "Rev.",
+    "title": "Very Rev.",
     "fullName": "Ifeanyi Okafor",
-    "designation": "Priest",
+    "designation": "Provost",
     "province": "Aba Province",
     "diocese": "Newmarch",
     "role": "Clergy Representative",
@@ -316,9 +316,9 @@ window.HOC_SEED = {
   },
   {
     "id": "r06",
-    "title": "Ven.",
+    "title": "Very Rev.",
     "fullName": "Tunde Balogun",
-    "designation": "Archdeacon",
+    "designation": "Dean",
     "province": "Abuja Province",
     "diocese": "Lakeside",
     "role": "Clergy Representative",
@@ -1723,6 +1723,87 @@ window.HOC_SEED = {
     "acknowledged": {}
   }
 ],
+
+  designations: [
+    "Priest",
+    "Canon",
+    "Archdeacon",
+    "Dean",
+    "Provost"
+  ],
+  meetings: [
+    {
+      "id": "m01",
+      "title": "Mid-year meeting of the House of Clergy",
+      "date": "2026-12-08",
+      "time": "10:00",
+      "venue": "Abuja (sample venue)",
+      "audience": "All provinces",
+      "notice": "Provincial representatives are asked to confirm attendance and to send any items for the agenda to the Secretary's office by 28 November 2026.\n\nThis is a sample meeting notice for the demo. It is not an official notice of the House.",
+      "agenda": "1. Opening prayers and roll of provinces\n2. Secretary's report\n3. Confirmation of the national directory\n4. Committee reports\n5. Any other business",
+      "postedAt": "2026-11-10T09:00:00+03:00",
+      "author": "Secretary's office"
+    },
+    {
+      "id": "m02",
+      "title": "Education committee briefing",
+      "date": "2026-12-04",
+      "time": "11:00",
+      "venue": "To be confirmed (sample)",
+      "audience": "Education",
+      "notice": "Members of the Education committee are invited to a briefing ahead of the mid-year meeting. This is a sample meeting notice for the demo.",
+      "agenda": "1. Opening prayer\n2. Committee attendance\n3. Review of sample provincial returns\n4. Papers for the mid-year meeting",
+      "postedAt": "2026-11-20T08:15:00+03:00",
+      "author": "Secretary's office"
+    },
+    {
+      "id": "m03",
+      "title": "House Business committee working session",
+      "date": "2026-11-27",
+      "time": "15:00",
+      "venue": "Online (sample)",
+      "audience": "House Business",
+      "notice": "A short working session to prepare business for the mid-year meeting. This is a sample meeting notice for the demo.",
+      "agenda": "1. Opening prayer\n2. Draft order of business\n3. Outstanding reports",
+      "postedAt": "2026-11-18T09:30:00+03:00",
+      "author": "Secretary's office"
+    }
+  ],
+  reports: [
+    {
+      "id": "rp01",
+      "title": "Education committee — third-quarter activity report",
+      "committee": "Education",
+      "period": "July–September 2026",
+      "fileName": "education-q3-2026-sample.pdf",
+      "notes": "A sample committee report for the demo. The file name is shown only; no real file is stored.",
+      "uploadedAt": "2026-10-15T10:00:00+03:00",
+      "uploadedBy": "Rev. Amara Okoro",
+      "authorPersonId": "r01"
+    },
+    {
+      "id": "rp02",
+      "title": "Mission committee — mid-year note",
+      "committee": "Mission",
+      "period": "January–June 2026",
+      "fileName": "mission-midyear-2026-sample.pdf",
+      "notes": "A sample committee report for the demo. The file name is shown only; no real file is stored.",
+      "uploadedAt": "2026-11-02T14:20:00+03:00",
+      "uploadedBy": "Canon Yakubu Danjuma",
+      "authorPersonId": "r08"
+    },
+    {
+      "id": "rp03",
+      "title": "House Business committee — draft order of business",
+      "committee": "House Business",
+      "period": "November 2026",
+      "fileName": "house-business-order-nov-2026-sample.docx",
+      "notes": "A sample committee paper for the demo. The file name is shown only; no real file is stored.",
+      "uploadedAt": "2026-11-16T08:40:00+03:00",
+      "uploadedBy": "Rev. Canon Adeola Bankole",
+      "authorPersonId": "r30"
+    }
+  ],
   ui: {
     role: "secretary",
     verifierProvince: "Lagos Province",

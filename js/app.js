@@ -1,7 +1,7 @@
 /* House of Clergy demo UI — no build step, no network calls. */
 (function () {
   var Store = window.HOCStore;
-  var filters = { q: "", province: "", diocese: "", status: "", fromVerified: "", toVerified: "" };
+  var filters = { q: "", province: "", diocese: "", committee: "", status: "", fromVerified: "", toVerified: "" };
   var toastTimer = null;
 
   function esc(value) {
@@ -97,6 +97,8 @@
         ["/directory", "Directory"],
         ["/circulars/new", "New circular"],
         ["/circulars", "Tracker"],
+        ["/meetings", "Meetings"],
+        ["/reports", "Reports"],
         ["/about", "About"],
       ];
     }
@@ -105,12 +107,16 @@
         ["/", "Queue"],
         ["/directory", "Directory"],
         ["/news", "News"],
+        ["/meetings", "Meetings"],
+        ["/reports", "Reports"],
         ["/about", "About"],
       ];
     }
     return [
       ["/", "My details"],
       ["/news", "News"],
+      ["/meetings", "Meetings"],
+      ["/reports", "Reports"],
       ["/directory", "Contacts"],
       ["/about", "About"],
     ];
@@ -122,6 +128,8 @@
     if (href === "/news") return r.name === "news";
     if (href === "/circulars") return r.name === "circulars" && r.id !== "new";
     if (href === "/circulars/new") return r.name === "circulars" && r.id === "new";
+    if (href === "/meetings") return r.name === "meetings";
+    if (href === "/reports") return r.name === "reports";
     if (href === "/about") return r.name === "about";
     return false;
   }
@@ -256,10 +264,12 @@
           "</section>" +
           '<section class="card" aria-labelledby="dash-actions-title">' +
             '<h2 id="dash-actions-title" class="section-title">Next steps</h2>' +
-            '<p class="muted">Use the directory to search and filter records. Post a circular when the list is ready. Export a CSV when the office needs a handover copy.</p>' +
+            '<p class="muted">Use the directory to search and filter records, including by committee. Post a circular, share a meeting notice and agenda, or review committee reports. Export a CSV when the office needs a handover copy.</p>' +
             '<div class="actions">' +
               '<a class="btn" href="#/directory">Open directory</a>' +
               '<a class="btn btn-secondary" href="#/circulars/new">Post a circular</a>' +
+              '<a class="btn btn-secondary" href="#/meetings">Meetings</a>' +
+              '<a class="btn btn-secondary" href="#/reports">Reports</a>' +
               '<button type="button" class="btn btn-secondary" data-action="export">Export CSV</button>' +
             "</div>" +
           "</section>" +
@@ -353,7 +363,10 @@
       }
       return (
         "<tr>" +
-          '<td><a href="#/record/' + esc(p.id) + '">' + esc(displayName(p)) + "</a></td>" +
+          '<td><a href="#/record/' + esc(p.id) + '">' + esc(displayName(p)) + "</a>" +
+            '<div class="muted small">' + esc(p.designation || "") +
+            (p.committee ? " · " + esc(p.committee) + " committee" : "") +
+            "</div></td>" +
           '<td class="cell-nowrap">' + esc(p.province) + "</td>" +
           '<td class="cell-nowrap">' + esc(p.diocese) + "</td>" +
           "<td>" + esc(p.role) + "</td>" +
@@ -389,8 +402,8 @@
     });
     var title = isRep ? "Authorised contact directory" : "National directory";
     var lede = isRep
-      ? "You can see a colleague’s email or phone only if they opted to share it."
-      : "Search and filter representatives across the 14 provinces.";
+      ? "You can see a colleague’s email or phone only if they opted to share it. Use the committee filter to find who is serving on a committee."
+      : "Search and filter representatives across the 14 provinces, or find the members of a committee.";
     var exportBtn = ui.role === "secretary"
       ? '<button type="button" class="btn btn-secondary" data-action="export">Export CSV</button>'
       : "";
@@ -400,7 +413,7 @@
         pageHead(title, lede) +
         '<form class="filters" id="filter-form" role="search">' +
           '<div class="field"><label for="filter-q">Search</label>' +
-          '<input id="filter-q" name="q" type="search" value="' + esc(filters.q) + '" placeholder="Name, diocese, email"></div>' +
+          '<input id="filter-q" name="q" type="search" value="' + esc(filters.q) + '" placeholder="Name, diocese, committee, email"></div>' +
           (isVerifier
             ? ""
             : '<div class="field"><label for="filter-province">Province</label>' +
@@ -411,15 +424,19 @@
           '<select id="filter-diocese" name="diocese">' +
           options(dioceseOpts, filters.diocese, "All dioceses") +
           "</select></div>" +
+          '<div class="field"><label for="filter-committee">Committee</label>' +
+          '<select id="filter-committee" name="committee">' +
+          options(Store.committees(), filters.committee, "All committees") +
+          "</select></div>" +
           '<div class="field"><label for="filter-status">Status</label>' +
           '<select id="filter-status" name="status">' +
           options(["Submitted", "Checked", "Verified", "Maintained", "Update needed"], filters.status, "All statuses") +
           "</select></div>" +
           (isRep
             ? ""
-            : '<div class="field"><label for="filter-from">Last verified from</label>' +
+            : '<div class="field field-date"><label for="filter-from">Last verified from</label>' +
               '<input id="filter-from" name="fromVerified" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" value="' + esc(filters.fromVerified) + '"></div>' +
-              '<div class="field"><label for="filter-to">Last verified to</label>' +
+              '<div class="field field-date"><label for="filter-to">Last verified to</label>' +
               '<input id="filter-to" name="toVerified" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" value="' + esc(filters.toVerified) + '"></div>') +
           '<div class="field field-actions"><span class="label" aria-hidden="true">&nbsp;</span>' +
           '<div class="row-actions"><button type="submit" class="btn">Apply filters</button>' +
@@ -494,7 +511,7 @@
               row("Clerical designation", person.designation) +
               row("Province", person.province) +
               row("Diocese", person.diocese) +
-              row("Role", person.role) +
+              row("Role in the House", person.role) +
               row("Committee", person.committee || "—") +
               row("Status", null, pill(person.status)) +
               row("Active", null, pill(person.active ? "Active" : "Inactive")) +
@@ -564,7 +581,7 @@
           '<dl class="dl">' +
             row("Province", person.province) +
             row("Diocese", person.diocese) +
-            row("Role", person.role) +
+            row("Role in the House", person.role) +
             row("Committee", person.committee || "—") +
             row("Mobile", person.mobile) +
             row("WhatsApp", person.whatsapp) +
@@ -589,14 +606,17 @@
         '<div class="form-grid form-grid-2">' +
           '<div class="field"><label for="f-title">Title</label>' +
           '<select id="f-title" name="title">' +
-          options(["Rev.", "Ven.", "Rev. Canon", "Rev. Dr", "Canon"], person.title) +
+          options(["Rev.", "Ven.", "Rev. Canon", "Very Rev.", "Rev. Dr", "Canon"], person.title) +
           "</select></div>" +
           '<div class="field"><label for="f-name">Full name</label>' +
           '<input id="f-name" name="fullName" type="text" required value="' + esc(person.fullName) + '"></div>' +
           '<div class="field"><label for="f-desig">Clerical designation</label>' +
-          '<input id="f-desig" name="designation" type="text" required value="' + esc(person.designation) + '"></div>' +
-          '<div class="field"><label for="f-role">Role</label>' +
-          '<input id="f-role" name="role" type="text" required value="' + esc(person.role) + '"></div>' +
+          '<input id="f-desig" name="designation" type="text" required list="desig-list" autocomplete="off" value="' + esc(person.designation) + '">' +
+          '<datalist id="desig-list">' + options(Store.designations(), person.designation) + "</datalist>" +
+          '<p class="help">Choose from the list, or type if the right designation is not there.</p></div>' +
+          '<div class="field"><label for="f-role">Role in the House</label>' +
+          '<input id="f-role" name="role" type="text" required value="' + esc(person.role) + '">' +
+          '<p class="help">This is the House role, for example Clergy Representative, not the clerical designation.</p></div>' +
           '<div class="field"><label for="f-province">Province</label>' +
           '<select id="f-province" name="province" data-action="cascade-diocese">' +
           options(Store.provinces(), person.province) +
@@ -685,9 +705,26 @@
       );
     }).join("");
 
+    var upcoming = Store.upcomingMeetings().slice(0, 3).map(function (m) {
+      return (
+        '<li><a href="#/meetings/' + esc(m.id) + '">' + esc(m.title) + "</a>" +
+        '<span class="muted"> — ' + esc(formatDate(m.date)) +
+        (m.time ? ", " + esc(m.time) : "") +
+        "</span></li>"
+      );
+    }).join("");
+    var meetingsCard = upcoming
+      ? '<section class="card" style="margin-bottom:1rem" aria-labelledby="upcoming-meetings-title">' +
+        '<h2 id="upcoming-meetings-title" class="section-title">Upcoming meetings</h2>' +
+        '<ul class="plain-list">' + upcoming + '</ul>' +
+        '<p><a href="#/meetings">Open the meetings calendar</a></p>' +
+        "</section>"
+      : "";
+
     return (
       '<div id="news-feed">' +
-        pageHead("News and circulars", "Official information from the House, shown only to the people it was sent to.") +
+        pageHead("News and circulars", "Official information from the House, shown only to the people it was sent to. Meeting notices and agendas are also on the Meetings page.") +
+        meetingsCard +
         (items || '<p class="empty">There are no circulars for you in this demo just now.</p>') +
       "</div>"
     );
@@ -773,14 +810,162 @@
     );
   }
 
+
+  function audienceLabel(value) {
+    if (!value || value === "All provinces") return "All provinces";
+    return "Committee: " + value;
+  }
+
+  function viewMeetings(id) {
+    var ui = Store.get().ui;
+    if (id === "new") {
+      if (ui.role !== "secretary") {
+        return pageHead("Secretary only", "Posting a meeting notice is a Secretary’s task in this demo.") +
+          '<p><a href="#/meetings">Back to meetings</a></p>';
+      }
+      var audienceOpts = ["All provinces"].concat(Store.committees());
+      return (
+        '<div id="new-meeting">' +
+          pageHead("Post a meeting notice", "Share a date, notice and agenda so representatives can get what they need from the Secretariat.") +
+          '<form id="meeting-form" class="card">' +
+            '<div class="form-grid form-grid-2">' +
+              '<div class="field"><label for="m-title">Title</label>' +
+              '<input id="m-title" name="title" type="text" required maxlength="160"></div>' +
+              '<div class="field"><label for="m-audience">Audience</label>' +
+              '<select id="m-audience" name="audience">' + options(audienceOpts, "All provinces") + "</select></div>" +
+              '<div class="field"><label for="m-date">Date</label>' +
+              '<input id="m-date" name="date" type="text" required inputmode="numeric" placeholder="YYYY-MM-DD"></div>' +
+              '<div class="field"><label for="m-time">Time</label>' +
+              '<input id="m-time" name="time" type="text" placeholder="10:00"></div>' +
+              '<div class="field" style="grid-column:1/-1"><label for="m-venue">Venue</label>' +
+              '<input id="m-venue" name="venue" type="text" maxlength="160"></div>' +
+            "</div>" +
+            '<div class="field" style="margin-top:0.85rem"><label for="m-notice">Notice</label>' +
+            '<textarea id="m-notice" name="notice" required maxlength="4000"></textarea></div>' +
+            '<div class="field" style="margin-top:0.85rem"><label for="m-agenda">Agenda</label>' +
+            '<textarea id="m-agenda" name="agenda" maxlength="4000" placeholder="1. Opening prayers"></textarea></div>' +
+            '<div class="actions">' +
+              '<button type="submit" class="btn">Post meeting notice</button>' +
+              '<a class="btn btn-secondary" href="#/meetings">Cancel</a>' +
+            "</div>" +
+            '<p class="help">This is a demo. The notice stays in this browser only and is not sent to anyone.</p>' +
+          "</form>" +
+        "</div>"
+      );
+    }
+    if (id) {
+      var meeting = Store.meeting(id);
+      if (!meeting) {
+        return pageHead("Meeting not found") + '<p><a href="#/meetings">Back to meetings</a></p>';
+      }
+      var agenda = (meeting.agenda || "").split(/\n/).filter(Boolean).map(function (line) {
+        return "<li>" + esc(line.replace(/^\d+\.\s*/, "")) + "</li>";
+      }).join("");
+      return (
+        '<div id="meeting-detail">' +
+          pageHead(meeting.title, audienceLabel(meeting.audience) + " · Posted " + formatDateTime(meeting.postedAt) + " by " + esc(meeting.author)) +
+          '<article class="card prose">' +
+            "<p><strong>Date:</strong> " + esc(formatDate(meeting.date)) +
+            (meeting.time ? " at " + esc(meeting.time) : "") + "</p>" +
+            (meeting.venue ? "<p><strong>Venue:</strong> " + esc(meeting.venue) + "</p>" : "") +
+            (meeting.notice || "").split(/\n\n/).map(function (para) { return "<p>" + esc(para) + "</p>"; }).join("") +
+            (agenda ? '<h2 class="section-title">Agenda</h2><ol class="agenda-list">' + agenda + "</ol>" : "") +
+          "</article>" +
+          '<p class="actions"><a href="#/meetings">Back to meetings</a></p>' +
+        "</div>"
+      );
+    }
+    var items = Store.meetings().map(function (m) {
+      return (
+        '<article class="card news-item" style="margin-bottom:0.85rem">' +
+          "<h2><a href=\"#/meetings/" + esc(m.id) + '">' + esc(m.title) + "</a></h2>" +
+          '<p class="news-meta">' + esc(formatDate(m.date)) +
+          (m.time ? ", " + esc(m.time) : "") +
+          " · " + esc(audienceLabel(m.audience)) +
+          (m.venue ? " · " + esc(m.venue) : "") + "</p>" +
+          '<p class="muted">' + esc((m.notice || "").split(/\n\n/)[0]) + "</p>" +
+        "</article>"
+      );
+    }).join("");
+    var postBtn = ui.role === "secretary"
+      ? '<div class="actions"><a class="btn" href="#/meetings/new">Post a meeting notice</a></div>'
+      : "";
+    return (
+      '<div id="meetings">' +
+        pageHead("Meetings calendar", "Notices and agendas from the Secretariat, so clergy can see the next meeting and what will be discussed. Sample data only.") +
+        postBtn +
+        (items || '<p class="empty">No meeting notices have been posted in this demo yet.</p>') +
+      "</div>"
+    );
+  }
+
+  function viewReports(showForm) {
+    var ui = Store.get().ui;
+    var person = ui.role === "rep" ? Store.currentRep() : null;
+    var canUpload = ui.role === "secretary" || (person && person.committee);
+    var list = Store.reports();
+    if (ui.role === "rep" && person && person.committee && !showForm) {
+      /* still show all sample reports, so the Secretary can demonstrate the House view */
+    }
+    var items = list.map(function (r) {
+      return (
+        '<article class="card news-item" style="margin-bottom:0.85rem">' +
+          "<h2>" + esc(r.title) + "</h2>" +
+          '<p class="news-meta">' + esc(r.committee) + " committee" +
+          (r.period ? " · " + esc(r.period) : "") +
+          " · Uploaded " + formatDateTime(r.uploadedAt) +
+          " by " + esc(r.uploadedBy) + "</p>" +
+          '<p class="muted">File (sample name only): ' + esc(r.fileName) + "</p>" +
+          (r.notes ? '<p class="muted">' + esc(r.notes) + "</p>" : "") +
+        "</article>"
+      );
+    }).join("");
+
+    var form = "";
+    if (canUpload) {
+      var committees = ui.role === "rep" && person.committee
+        ? [person.committee]
+        : Store.committees();
+      form =
+        '<form id="report-form" class="card" style="margin-bottom:1.25rem">' +
+          "<h2 class=\"section-title\">Upload a committee report</h2>" +
+          '<p class="help">This demo stores only the file name in this browser. No file is sent to a server.</p>' +
+          '<div class="form-grid form-grid-2">' +
+            '<div class="field"><label for="rp-title">Title</label>' +
+            '<input id="rp-title" name="title" type="text" required maxlength="160"></div>' +
+            '<div class="field"><label for="rp-committee">Committee</label>' +
+            '<select id="rp-committee" name="committee">' + options(committees, person && person.committee || "") + "</select></div>" +
+            '<div class="field"><label for="rp-period">Period</label>' +
+            '<input id="rp-period" name="period" type="text" placeholder="July–September 2026"></div>' +
+            '<div class="field"><label for="rp-file">File (demo: name only)</label>' +
+            '<input id="rp-file" name="file" type="file"></div>' +
+          "</div>" +
+          '<div class="field" style="margin-top:0.85rem"><label for="rp-notes">Note</label>' +
+          '<textarea id="rp-notes" name="notes" maxlength="1000"></textarea></div>' +
+          '<div class="actions"><button type="submit" class="btn">Upload report</button></div>' +
+        "</form>";
+    } else if (ui.role === "rep") {
+      form = '<p class="muted">In this demo, a representative can upload a report when their record lists a committee.</p>';
+    }
+
+    return (
+      '<div id="reports">' +
+        pageHead("Committee reports", "A place for committees to send reports to the Secretariat. Sample data only; uploads stay in this browser.") +
+        form +
+        "<h2 class=\"section-title\">Reports on file</h2>" +
+        (items || '<p class="empty">No committee reports have been uploaded in this demo yet.</p>') +
+      "</div>"
+    );
+  }
+
   function viewAbout() {
     return (
       '<div id="about" class="prose">' +
         pageHead("About this demo", "A clickable model of a national coordination directory for the House of Clergy.") +
-        "<p>This demo lets the Secretary’s office, provincial verifiers and clergy representatives try the main flows: keeping one record per person, checking and verifying details, reading news and circulars, and finding authorised contacts.</p>" +
+        "<p>This demo lets the Secretary’s office, provincial verifiers and clergy representatives try the main flows: keeping one record per person, checking and verifying details, reading news and circulars, finding committee members, seeing meeting notices and agendas, and uploading a sample committee report.</p>" +
         "<p>Every person, diocese, phone number and email you see here is fictional and labelled <strong>Demo, sample data</strong>. Phone numbers follow the obviously fake pattern +234 800 000 00xx. Nothing is sent to a server. Changes stay in this browser only, in local storage, until you choose Reset demo.</p>" +
         "<p>The 14 province names are the ecclesiastical provinces of the Church of Nigeria (Anglican Communion), as listed on the official Church site on 29 May 2024. The dioceses in this demo are invented and are not a list of real dioceses.</p>" +
-        "<p>A live version would add secure logins and a protected database. Clergy personal data would not sit in a public website folder or a static file. This demo does not collect real data and should not be used with real names or real telephone numbers.</p>" +
+        "<p>A live version would add secure logins and a protected database, and could notify people when a notice or report arrives. Clergy personal data would not sit in a public website folder or a static file. This demo does not collect real data and should not be used with real names or real telephone numbers. Uploaded “files” in the demo are names only.</p>" +
         "<p>The work was prepared as a volunteer project for the Secretary of the House of Clergy. The site footer records that it was built as a volunteer project by AYVO, a brand of Trublshut AI Limited.</p>" +
       "</div>"
     );
@@ -810,6 +995,10 @@
         view = pageHead("Secretary only", "The circular tracker is a Secretary’s view in this demo.") +
           '<p><a href="#/news">Open news</a></p>';
       } else view = viewTracker();
+    } else if (r.name === "meetings") {
+      view = viewMeetings(r.id);
+    } else if (r.name === "reports") {
+      view = viewReports();
     } else if (ui.role === "secretary") {
       view = viewDashboard();
     } else if (ui.role === "verifier") {
@@ -831,6 +1020,7 @@
     filters.q = data.get("q") || "";
     filters.province = data.get("province") || "";
     filters.diocese = data.get("diocese") || "";
+    filters.committee = data.get("committee") || "";
     filters.status = data.get("status") || "";
     filters.fromVerified = data.get("fromVerified") || "";
     filters.toVerified = data.get("toVerified") || "";
@@ -991,6 +1181,56 @@
       go("/circulars");
       return;
     }
+    if (form.id === "meeting-form") {
+      event.preventDefault();
+      var date = String(form.date.value || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        toast("Please enter the date as YYYY-MM-DD.");
+        return;
+      }
+      var meeting = Store.postMeeting({
+        title: String(form.title.value).trim(),
+        date: date,
+        time: String(form.time.value || "").trim(),
+        venue: String(form.venue.value || "").trim(),
+        audience: String(form.audience.value || "All provinces"),
+        notice: String(form.notice.value || "").trim(),
+        agenda: String(form.agenda.value || "").trim(),
+      });
+      toast("Meeting notice posted. Sample data only.");
+      go("/meetings/" + meeting.id);
+      return;
+    }
+    if (form.id === "report-form") {
+      event.preventDefault();
+      var fileInput = form.elements.namedItem("file");
+      var fileName = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0].name : "";
+      if (!fileName) {
+        toast("Choose a sample file. This demo keeps only the file name in this browser.");
+        return;
+      }
+      var ui = Store.get().ui;
+      var uploader = "Secretary's office";
+      var authorId = "";
+      if (ui.role === "rep") {
+        var rep = Store.currentRep();
+        uploader = displayName(rep);
+        authorId = rep.id;
+      }
+      Store.uploadReport({
+        title: String(form.title.value).trim(),
+        committee: String(form.committee.value).trim(),
+        period: String(form.period.value || "").trim(),
+        fileName: fileName,
+        notes: String(form.notes.value || "").trim(),
+        uploadedBy: uploader,
+        authorPersonId: authorId,
+      });
+      toast("Report recorded in this browser. The file itself was not uploaded.");
+      form.reset();
+      render();
+      return;
+    }
   }
 
   function onChange(event) {
@@ -1000,7 +1240,7 @@
       var ui = { role: next, confirmStep: 1 };
       if (next === "verifier") ui.verifierProvince = Store.get().ui.verifierProvince || "Lagos Province";
       Store.setUI(ui);
-      filters = { q: "", province: next === "verifier" ? Store.get().ui.verifierProvince : "", diocese: "", status: "", fromVerified: "", toVerified: "" };
+      filters = { q: "", province: next === "verifier" ? Store.get().ui.verifierProvince : "", diocese: "", committee: "", status: "", fromVerified: "", toVerified: "" };
       go("/");
       return;
     }
@@ -1034,7 +1274,7 @@
     if (action === "reset") {
       if (window.confirm("Reset the demo? This clears changes in this browser and restores the fictional sample data.")) {
         Store.reset();
-        filters = { q: "", province: "", diocese: "", status: "", fromVerified: "", toVerified: "" };
+        filters = { q: "", province: "", diocese: "", committee: "", status: "", fromVerified: "", toVerified: "" };
         toast("Demo reset to the sample data.");
         go("/");
       }
